@@ -1,0 +1,58 @@
+{
+    "blast": {
+        "cause": "Caused by the fungus Magnaporthe oryzae. Thrives in high humidity, frequent rain, and prolonged leaf wetness.",
+        "treatment": "Avoid excessive nitrogen fertilizers. Improve field drainage. Apply systemic fungicides like Tricyclazole at early stages."
+    },
+    "brownspot": {
+        "cause": "Caused by the fungus Bipolaris oryzae. It typically attacks crops in nutrient-depleted soils or during severe water stress.",
+        "treatment": "Apply balanced fertilizers, especially potassium. Treat seeds before planting and manage water levels consistently."
+    },
+    "tungro": {
+        "cause": "Caused by a combination of viruses transmitted primarily by leafhoppers. Spreads rapidly when insect populations are high.",
+        "treatment": "Control leafhopper populations using appropriate insecticides. Remove and destroy infected plants to prevent further spreading."
+    },
+    "bacterialblight": {
+        "cause": "Caused by Xanthomonas bacteria. Often introduced through infected seeds and spread rapidly by wind-driven rain.",
+        "treatment": "Chemical controls are largely ineffective once established. Rely on resistant crop varieties and certified clean seeds."
+    },
+    "early blight": {
+        "cause": "Caused by the fungus Alternaria solani. It spreads rapidly in warm temperatures accompanied by high humidity or heavy dews.",
+        "treatment": "Remove infected lower leaves to prevent spread. Use copper-based protectant fungicides and practice strict crop rotation next season."
+    },
+    "late blight": {
+        "cause": "Caused by the oomycete Phytophthora infestans. It is highly aggressive and spreads fast in cool, wet, and overcast conditions.",
+        "treatment": "Immediately remove and destroy heavily infected plants. Apply specialized protectant fungicides and ensure excellent air circulation."
+    },
+    "bacterial spot": {
+        "cause": "Caused by Xanthomonas species. Favored by high moisture and warm temperatures. Spreads rapidly via splashing rain.",
+        "treatment": "Apply copper-based bactericides early. Avoid overhead watering and ensure disease-free seeds are used for future planting."
+    },
+    "leaf mold": {
+        "cause": "Caused by the fungus Passalora fulva. Predominantly affects crops in environments with poor air circulation and high relative humidity.",
+        "treatment": "Increase spacing between plants for better airflow. Avoid overhead watering. Prune dense foliage and apply appropriate fungicides."
+    },
+    "septoria": {
+        "cause": "Caused by the fungus Septoria lycopersici. Spreads through splashing water transferring the pathogen from contaminated soil to lower leaves.",
+        "treatment": "Apply mulch to prevent soil splashing. Remove infected lower leaves immediately and use targeted fungicidal sprays."
+    },
+    "spider mite": {
+        "cause": "Infestation by tiny arachnids. The damage is heavily exacerbated by hot, dry, and dusty environmental conditions.",
+        "treatment": "Spray plants with water to increase humidity and physically wash off mites. Use insecticidal soaps or horticultural oils for severe infestations."
+    },
+    "target spot": {
+        "cause": "Caused by the fungus Corynespora cassiicola. Thrives in high humidity and moderate to warm temperatures.",
+        "treatment": "Improve airflow through careful pruning. Avoid overhead irrigation and apply targeted fungicides at the first sign of lesions."
+    },
+    "mosaic": {
+        "cause": "A highly contagious viral infection. It is most often spread mechanically through contaminated gardening tools, hands, or infected plant debris.",
+        "treatment": "There is no cure for infected plants. Remove and destroy them immediately. Wash hands and disinfect all tools thoroughly."
+    },
+    "yellow leaf curl": {
+        "cause": "A viral disease transmitted primarily by the silverleaf whitefly. Severe in warm climates with high whitefly populations.",
+        "treatment": "Control whitefly populations using sticky traps or insecticidal soaps. Remove infected plants immediately to limit the spread of the virus."
+    },
+    "healthy": {
+        "cause": "No pathogens detected. Environmental conditions and soil nutrition are currently optimal.",
+        "treatment": "Maintain current watering schedules and fertilizer routines. Continue regular visual monitoring of the crop."
+    }
+}

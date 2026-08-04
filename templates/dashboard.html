@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Earthworm{% endblock %}
+
+{% block content %}
+<h1>What would you like to do?</h1>
+
+<div class="option-grid">
+    <a href="{{ url_for('price_menu') }}" class="option-card">
+        <span class="option-icon">📈</span>
+        <h2>Price Prediction</h2>
+        <p>See today's price and next week's forecast for Rice, Tomato, or Potato.</p>
+    </a>
+
+    <a href="{{ url_for('health_menu') }}" class="option-card">
+        <span class="option-icon">🌿</span>
+        <h2>Health Analysis</h2>
+        <p>Upload a leaf photo to check for disease in Rice, Tomato, or Potato.</p>
+    </a>
+</div>
+{% endblock %}

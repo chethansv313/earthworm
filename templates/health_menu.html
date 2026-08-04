@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earthworm - Crop Health Analysis</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f2eb;
+            color: #2c3e35;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #1b3b2b;
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 25px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        header {
+            margin-bottom: 40px;
+            text-align: left;
+        }
+
+        header h1 {
+            font-family: Georgia, serif;
+            font-size: 2.75rem;
+            color: #1b3b2b;
+            margin: 0 0 10px 0;
+        }
+
+        header p {
+            color: #5c6b61;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .crop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .crop-card {
+            background: #ffffff;
+            padding: 40px 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            cursor: pointer;
+            text-align: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid #eae5dc;
+        }
+
+        .crop-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .crop-card .emoji {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+        }
+
+        .crop-card h2 {
+            font-family: Georgia, serif;
+            font-size: 1.75rem;
+            color: #1b3b2b;
+            margin: 0 0 8px 0;
+        }
+
+        .crop-card p {
+            color: #5c6b61;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+        
+        <header>
+            <h1>Earthworm Crop Health Analysis</h1>
+            <p>Select a crop below to run health checks with automated background isolation.</p>
+        </header>
+
+        <div class="crop-grid">
+            <div class="crop-card" onclick="location.href='{{ url_for('health_crop', crop_name='rice') }}'">
+                <div class="emoji">🌾</div>
+                <h2>Rice</h2>
+                <p>Health analysis using leaf image</p>
+            </div>
+
+            <div class="crop-card" onclick="location.href='{{ url_for('health_crop', crop_name='tomato') }}'">
+                <div class="emoji">🍅</div>
+                <h2>Tomato</h2>
+                <p>Health analysis using leaf image</p>
+            </div>
+
+            <div class="crop-card" onclick="location.href='{{ url_for('health_crop', crop_name='potato') }}'">
+                <div class="emoji">🥔</div>
+                <h2>Potato</h2>
+                <p>Health analysis using leaf image</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

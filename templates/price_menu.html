@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Price Prediction — Earthworm{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+<h1>Price Prediction</h1>
+<p class="subtitle">Choose a crop to see today's price and next week's forecast.</p>
+
+<div class="crop-grid">
+    <a href="{{ url_for('price_crop', crop_name='rice') }}" class="crop-card">
+        <span class="crop-icon">🌾</span>
+        <h2>Rice</h2>
+    </a>
+    <a href="{{ url_for('price_crop', crop_name='tomato') }}" class="crop-card">
+        <span class="crop-icon">🍅</span>
+        <h2>Tomato</h2>
+    </a>
+    <a href="{{ url_for('price_crop', crop_name='potato') }}" class="crop-card">
+        <span class="crop-icon">🥔</span>
+        <h2>Potato</h2>
+    </a>
+</div>
+{% endblock %}
