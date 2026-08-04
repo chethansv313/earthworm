@@ -2,9 +2,12 @@
 app.py
 ---------------------
 Complete Unified Flask Application for Earthworm Agricultural Web App.
-Includes Authentication, Direct User-Input Price Forecasting via LSTM,
-and Two-Stage Crop Health ML Pipeline with Specific Disease Name Mapping
-and GrabCut Background Isolation.
+Includes Authentication, District-Targeted Live Price Scraping,
+Iterative LSTM Forecasting, and Two-Stage Crop Health ML Pipeline
+with Specific Disease Name Mapping and GrabCut Background Isolation.
+
+UPDATED: Includes leaf-validity check, real LSTM price output,
+and dynamic external JSON loading for disease causes and treatments.
 """
 
 import os
@@ -15,7 +18,8 @@ import traceback
 import base64
 import numpy as np
 import pandas as pd
-import cv2
+import cloudscraper
+import cv2  # Added for image resizing and color conversion
 from bs4 import BeautifulSoup
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
@@ -26,7 +30,7 @@ from flask_login import (
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
-# IMPORTING GRABCUT + LEAF-VALIDITY CHECK FROM UTILS.PY
+# IMPORTING GRABCUT + LEAF-VALIDITY CHECK FROM YOUR UPDATED UTILS.PY FILE
 from utils import extract_leaf_with_grabcut, is_valid_leaf
 
 # Optional TensorFlow import for LSTM & Disease Models
@@ -63,9 +67,117 @@ except Exception as e:
     print(f"[ERROR] Could not load knowledge.json: {e}")
     diseaseKnowledge = {}
 
+# ---------------------------------------------------------------
+# TARGET MARKET LOCATIONS (EXACT DISTRICT-LEVEL URL CONFIG)
+# ---------------------------------------------------------------
+CROP_MARKETS = {
+    "potato": {
+        "url": "https://www.commodityonline.com/mandiprices/potato/uttar-pradesh/agra"
+    },
+    "tomato": {
+        "url": "https://www.commodityonline.com/mandiprices/district/madhya-pradesh/dewas/tomato"
+    },
+    "rice": {
+        "url": "https://www.commodityonline.com/mandiprices/district/uttar-pradesh/lakhimpur/rice"
+    }
+}
 
 # ---------------------------------------------------------------
-# DATABASE MODELS
+# LIVE DATA SCRAPER & CSV FALLBACK PROVIDER
+# ---------------------------------------------------------------
+def fetch_csv_fallback_price(crop_name):
+    """Reliable fallback extracting the most recent independent price from local CSV datasets."""
+    csv_mapping = {
+        "rice": "RICEPRED.csv",
+        "tomato": "TOMATONEW1.csv",
+        "potato": "POTATO.csv"
+    }
+    distinct_defaults = {
+        "rice": 2950.00,
+        "tomato": 2100.00,
+        "potato": 1350.00
+    }
+    file_name = csv_mapping.get(crop_name)
+    fallback_price = distinct_defaults.get(crop_name, 2000.00)
+
+    try:
+        if file_name and os.path.exists(file_name):
+            df = pd.read_csv(file_name)
+            df['Arrival_Date'] = pd.to_datetime(df['Arrival_Date'], format='mixed', dayfirst=True, errors='coerce')
+            df = df.dropna(subset=['Arrival_Date']).sort_values('Arrival_Date')
+            if not df.empty and 'Modal_Price' in df.columns:
+                valid_prices = df['Modal_Price'].dropna()
+                if not valid_prices.empty:
+                    print(f"[{crop_name.upper()} DATA SOURCE] -> Loaded from local CSV fallback ({file_name}).")
+                    return float(valid_prices.iloc[-1])
+    except Exception as e:
+        print(f"[{crop_name.upper()} DATA ERROR] -> Failed to read CSV: {e}")
+        pass
+
+    print(f"[{crop_name.upper()} DATA SOURCE] -> Using hardcoded default price.")
+    return fallback_price
+
+
+def fetch_live_price(crop_name):
+    """Scrapes live market prices dynamically with specific focus on summary cards."""
+    try:
+        market_info = CROP_MARKETS.get(crop_name, {})
+        url = market_info.get("url")
+
+        if not url:
+            print(f"[{crop_name.upper()} DATA WARNING] -> No live URL configured. Reverting to fallback.")
+            return fetch_csv_fallback_price(crop_name)
+
+        scraper = cloudscraper.create_scraper(browser={
+            'browser': 'chrome',
+            'platform': 'windows',
+            'desktop': True
+        })
+
+        response = scraper.get(url, timeout=30)
+
+        if response.status_code != 200:
+            print(f"[{crop_name.upper()} DATA WARNING] -> Live site blocked request (Status: {response.status_code}). Reverting to fallback.")
+            return fetch_csv_fallback_price(crop_name)
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Check summary cards first
+        summary_elements = soup.find_all(['div', 'span', 'td', 'li'], string=re.compile(r'Quintal|₹|Rs', re.IGNORECASE))
+        for elem in summary_elements:
+            text = elem.text.replace(',', '').strip()
+            match = re.search(r'(?:₹|Rs\.?)\s*(\d{3,}(?:\.\d+)?)', text, re.IGNORECASE)
+            if match:
+                price = float(match.group(1))
+                if 500 < price < 25000:
+                    print(f"[{crop_name.upper()} DATA SOURCE] -> Successfully scraped LIVE price from summary.")
+                    return price
+
+        # Check tables if summary cards fail
+        tables = soup.find_all('table')
+        for table in tables:
+            rows = table.find_all('tr')
+            for row in rows:
+                cols = row.find_all(['td', 'th'])
+                for col in cols:
+                    text = col.text.replace(',', '').strip()
+                    match = re.search(r'(\d{3,}(?:\.\d+)?)', text)
+                    if match:
+                        live_price = float(match.group(1))
+                        if 500 < live_price < 25000:
+                            print(f"[{crop_name.upper()} DATA SOURCE] -> Successfully scraped LIVE price from table.")
+                            return live_price
+
+        print(f"[{crop_name.upper()} DATA WARNING] -> Could not find price data on live page. Reverting to fallback.")
+        return fetch_csv_fallback_price(crop_name)
+
+    except Exception as e:
+        print(f"[{crop_name.upper()} DATA ERROR] -> Live scraper crashed: {e}. Reverting to fallback.")
+        return fetch_csv_fallback_price(crop_name)
+
+
+# ---------------------------------------------------------------
+# DATABASE MODEL
 # ---------------------------------------------------------------
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -236,6 +348,7 @@ def health_crop(crop_name):
                                             disease_label_map = json.load(lf)
                                             disease_name = disease_label_map.get(d_class_idx, disease_name)
 
+                                    # DYNAMIC EDUCATIONAL CONTENT LOOKUP
                                     cause = "Specific cause information is currently unavailable in the database."
                                     treatment = "Consult a local agricultural extension officer for targeted treatment."
 
@@ -259,6 +372,7 @@ def health_crop(crop_name):
                         else:
                             result = {"status": "error", "reason": "Identifier model or labels missing."}
                 else:
+                    # Fallback if TF is not loaded
                     result = {
                         "status": "ok",
                         "prediction": "Brown Spot",
@@ -276,7 +390,7 @@ def health_crop(crop_name):
 
 
 # ---------------------------------------------------------------
-# PRICE PREDICTION & USER INPUT ROUTES (ITERATIVE LSTM FORECAST)
+# PRICE PREDICTION ROUTES (ITERATIVE LSTM FORECAST)
 # ---------------------------------------------------------------
 @app.route("/price")
 @login_required
@@ -290,20 +404,14 @@ def price_crop(crop_name):
     if crop_name not in VALID_CROPS:
         return "Invalid crop", 404
 
+    defaults = {
+        "rice": (2950.00, [2910.0, 2930.0, 2920.0, 2960.0, 2980.0, 2970.0, 2950.0]),
+        "tomato": (2100.00, [2050.0, 2120.0, 2080.0, 2150.0, 2130.0, 2160.0, 2100.0]),
+        "potato": (1350.00, [1310.0, 1360.0, 1340.0, 1370.0, 1390.0, 1380.0, 1350.0])
+    }
+
+    today_price, forecast = defaults[crop_name]
     prediction_triggered = True
-
-    # Default baseline prices
-    defaults_map = {"rice": 5658.00, "tomato": 2100.00, "potato": 1350.00}
-    today_price = defaults_map.get(crop_name, 2000.00)
-
-    # Capture direct user input from form submission
-    if request.method == "POST":
-        try:
-            user_input_val = request.form.get("user_price")
-            if user_input_val:
-                today_price = float(user_input_val)
-        except ValueError:
-            flash("Please enter a valid numeric price.")
 
     try:
         csv_mapping = {
@@ -332,11 +440,19 @@ def price_crop(crop_name):
         else:
             recent_prices = [today_price] * 7
 
-        # Scale history to match current user-entered live price
-        last_csv_price = recent_prices[-1] if recent_prices else today_price
-        scale_ratio = (today_price / last_csv_price) if last_csv_price > 0 else 1.0
-        scaled_history = [round(p * scale_ratio, 2) for p in recent_prices[-7:-1]]
-        recent_prices = scaled_history + [today_price]
+        live_price = fetch_live_price(crop_name)
+
+        if live_price is not None:
+            last_csv_price = recent_prices[-1] if recent_prices else live_price
+            today_price = live_price
+
+            if last_csv_price > 0:
+                scale_ratio = today_price / last_csv_price
+            else:
+                scale_ratio = 1.0
+
+            scaled_history = [round(p * scale_ratio, 2) for p in recent_prices[-7:-1]]
+            recent_prices = scaled_history + [today_price]
 
         model_h5_path = os.path.join("models", f"price_{crop_name}_model.h5")
         scaler_pkl_path = os.path.join("models", f"price_{crop_name}_scaler.pkl")
@@ -365,8 +481,7 @@ def price_crop(crop_name):
         else:
             forecast = [round(today_price, 2) for _ in range(7)]
 
-    except Exception as e:
-        print(f"[PRICE ERROR] {e}")
+    except Exception:
         forecast = [round(today_price, 2) for _ in range(7)]
 
     today_price_quintal = round(today_price, 2)
